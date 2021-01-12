@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import axios from 'axios';
 import timer from '../tools/timer'
+import parser from 'xml2json'
 const router = Router()
 
 const baseURL = "https://bad-api-assignment.reaktor.com/v2/"
@@ -18,8 +19,22 @@ router.get('/products/:category', async (req, res) => {
 
 router.get('/availability/:manufacturer', async (req, res) => {
     const path = apiPath(["availability", req.params.manufacturer])
-    res.json(await getJsonResponse(path))
+    const data = await getJsonResponse(path)
+
+    console.log("Received JSON data: ", data)
+
+    res.json(data.response.map((p: { id: any; DATAPAYLOAD: string; }) => {
+        return {
+            id: p.id,
+            availability: getAvailabilityFromXml(p.DATAPAYLOAD)
+        }
+    }))
 })
+const getAvailabilityFromXml= (s: string) => {
+    const data = JSON.parse(parser.toJson(s))
+    console.log(data)
+    return data["INSTOCKVALUE"]
+}
 
 const getJsonResponse = async (path: string, retries = 1) => {
     for (let i = 0; i < retries; i++) {
@@ -32,7 +47,6 @@ const getJsonResponse = async (path: string, retries = 1) => {
         }
         await timer(timeout)
     }
-
 }
 
 const apiPath = (path: Array<string>) => {
