@@ -21,29 +21,27 @@ router.get('/availability/:manufacturer', async (req, res) => {
     const path = apiPath(["availability", req.params.manufacturer])
     const data = await getJsonResponse(path)
 
-    console.log("Received JSON data: ", data)
-
     res.json(data.response.map((p: { id: any; DATAPAYLOAD: string; }) => {
-        return {
+        const productAvailability = {
             id: p.id,
             availability: getAvailabilityFromXml(p.DATAPAYLOAD)
         }
+        console.log("Product availability: ", productAvailability)
+        return productAvailability
     }))
 })
 const getAvailabilityFromXml= (s: string) => {
     const data = JSON.parse(parser.toJson(s))
-    console.log(data)
-    return data["INSTOCKVALUE"]
+    return data["AVAILABILITY"]["INSTOCKVALUE"]
 }
 
 const getJsonResponse = async (path: string, retries = 1) => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await axios.get(path)
-            console.log("Received response: ", response)
             return response.data
         } catch (e) {
-            console.log("Error fetching products: ", e.message, e)
+            console.log("Error fetching JSON from API: ", e.message, e)
         }
         await timer(timeout)
     }

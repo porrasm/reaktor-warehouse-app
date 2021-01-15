@@ -3,20 +3,14 @@ import React from 'react';
 import { Navbar, Nav, Form, FormControl, Button, Alert, Table, Col, Row, Card } from 'react-bootstrap'
 import { Container, Grid, Menu, Rail, Segment, Dropdown, Item, Message, List } from 'semantic-ui-react'
 import productApi from '../services/productApi'
+import { IProduct } from '../services/productApi'
 
-interface IViewState {
+export interface IViewState {
   category: string,
+  manufacturer: string,
   selectedProduct: IProduct | null,
   products: { [name: string]: Array<IProduct> },
   availability: { [name: string]: { [name: string]: string } }
-}
-interface IProduct {
-  id: string,
-  type: string,
-  name: string,
-  color: Array<string>,
-  price: number,
-  manufacturer: string
 }
 
 class Listing extends React.Component<any, IViewState> {
@@ -33,6 +27,7 @@ class Listing extends React.Component<any, IViewState> {
 
     this.state = {
       category: "",
+      manufacturer: "",
       selectedProduct: null,
       products: productDict,
       availability: {}
@@ -63,7 +58,7 @@ class Listing extends React.Component<any, IViewState> {
               <Segment>
                 {this.getProductListing(this.state.products[this.state.category])}
 
-                <Rail position="left">{this.getCategoryDropdown(this.categories)}</Rail>
+                <Rail position="left">{this.leftRail()}</Rail>
                 <Rail position="right">{this.productInfo(this.state.selectedProduct)}</Rail>
               </Segment>
             </Grid.Column>
@@ -73,17 +68,22 @@ class Listing extends React.Component<any, IViewState> {
     );
   }
 
+  leftRail = () => {
+    return <div>
+      {this.getCategoryDropdown(this.categories)}
+      {this.getManufacturerDropdown()}
+    </div>
+  }
+
+
 
   //#region views
   getCategoryDropdown = (categories: Array<string>) => {
-    let key = 0
-
-
     return <Dropdown
       placeholder="Select category"
       fluid
       selection
-      onChange={(event, data) => this.enableCategory(data.value as string)}
+      onChange={(event, data) => this.selectCategory(data.value as string)}
       options={categories.map(c => {
         return {
           key: c,
@@ -92,6 +92,39 @@ class Listing extends React.Component<any, IViewState> {
         }
       })}
     />
+  }
+
+  getManufacturerDropdown = () => {
+    const manufacturers = this.getAvailableManufacturers(this.state.products[this.state.category])
+    return <Dropdown
+      placeholder="Select Manufacturer"
+      fluid
+      selection
+      value={this.state.manufacturer}
+      onChange={(event, data) => this.selectManufacturer(data.value as string)}
+      options={manufacturers.map(c => {
+        return {
+          key: c,
+          text: this.categoryToString(c),
+          value: c
+        }
+      })}
+    />
+  }
+
+  getAvailableManufacturers = (products: Array<IProduct>): string[] => {
+    if (!products) {
+      return []
+    }
+    const hs = new Set<string>()
+    products.forEach(p => {
+      hs.add(p.manufacturer)
+    });
+    const manufacturers: string[] = []
+    hs.forEach(m => {
+      manufacturers.push(m)
+    })
+    return manufacturers.sort()
   }
 
   getProductListing = (products: Array<IProduct>) => {
@@ -103,11 +136,13 @@ class Listing extends React.Component<any, IViewState> {
 
       return (
         <List divided>
-          {products.map(p => {
+          {products.filter(p => {
+            return this.state.manufacturer == p.manufacturer
+          }).map(p => {
             return <List.Item onClick={() => this.selectProduct(p)}>
               <List.Content>
                 <List.Header as='a'>{p.name}</List.Header>
-                <List.Description>Manufacturer: {p.manufacturer}</List.Description>
+                <List.Description>availability: {this.getProductAvailability(p)}</List.Description>
                 <List.Description>Price: {p.price}</List.Description>
               </List.Content>
             </List.Item>
@@ -115,6 +150,14 @@ class Listing extends React.Component<any, IViewState> {
         </List>
       )
     }
+  }
+
+  getProductAvailability = (p: IProduct) => {
+    if (!this.state.availability[p.manufacturer]) {
+      return "Loading..."
+    }
+    const availability = this.state.availability[p.manufacturer][p.id]
+    return availability ? availability : "Error"
   }
 
   productInfo = (product: IProduct | null) => {
@@ -125,6 +168,9 @@ class Listing extends React.Component<any, IViewState> {
       <Item>
         <Item.Content>
           <Item.Header>{product.name}</Item.Header>
+          <Item.Description>
+            Availability: {this.getProductAvailability(product)}
+          </Item.Description>
           <Item.Description>
             Price: {product.price}
           </Item.Description>
@@ -148,18 +194,11 @@ class Listing extends React.Component<any, IViewState> {
 
   //#region utility
   selectProduct = async (selectedProduct: IProduct) => {
-    console.log("Selected product: ", selectedProduct.name)
+    console.log("Selected product: ", selectedProduct)
     this.setState({ selectedProduct })
-    if (!this.state.availability[selectedProduct.manufacturer]) {
-      const availability = this.state.availability
-      const productAvailability = await productApi.getManufacturerAvailability(selectedProduct.manufacturer)
-      availability[selectedProduct.manufacturer] = productAvailability
-      this.setState({ availability })
-    }
   }
 
-  enableCategory = async (category: string) => {
-
+  selectCategory = async (category: string) => {
     this.setState({ category })
 
     if (this.state.products[category].length > 0) {
@@ -168,12 +207,40 @@ class Listing extends React.Component<any, IViewState> {
 
     console.log("Enabled category: ", category)
 
-    const products = await productApi.getCategoryProducts(category)
+    const products = (await productApi.getCategoryProducts(category)).sort((a, b) => a.name.localeCompare(b.name))
+
+    const manufacturer = products.length > 0 ? this.getAvailableManufacturers(products)[0] : ""
 
     const productDict = this.state.products
     productDict[category] = products
 
     this.setState({ products: productDict })
+    this.selectManufacturer(manufacturer)
+  }
+
+  selectManufacturer = async (manufacturer: string) => {
+    console.log("Selected manufacturer: ", manufacturer)
+
+    this.setState({ manufacturer })
+    if (manufacturer == "") {
+      return
+    }
+
+    if (this.state.availability[manufacturer]) {
+      console.log("Already got information from manufacturer: ", manufacturer)
+      return
+    }
+
+    const manAvailabilityArray = await productApi.getManufacturerAvailability(manufacturer)
+    console.log("Received availability array: ", manAvailabilityArray)
+    const manAvailability: { [name: string]: string } = {}
+    manAvailabilityArray.forEach(a => {
+      manAvailability[a.id.toLowerCase()] = a.availability
+    });
+
+    const availability = this.state.availability
+    availability[manufacturer] = manAvailability
+    this.setState({ availability })
   }
 
   categoryToString = (cat: string) => {
