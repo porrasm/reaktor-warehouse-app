@@ -21,14 +21,20 @@ router.get('/availability/:manufacturer', async (req, res) => {
     const path = apiPath(["availability", req.params.manufacturer])
     const data = await getJsonResponse(path)
 
-    res.json(data.response.map((p: { id: any; DATAPAYLOAD: string; }) => {
-        const productAvailability = {
-            id: p.id,
-            availability: getAvailabilityFromXml(p.DATAPAYLOAD)
-        }
-        console.log("Product availability: ", productAvailability)
-        return productAvailability
-    }))
+    console.log("Received availability: ", data)
+
+    try {
+        res.json(data.response.map((p: { id: any; DATAPAYLOAD: string; }) => {
+            const productAvailability = {
+                id: p.id,
+                availability: getAvailabilityFromXml(p.DATAPAYLOAD)
+            }
+            console.log("Product availability: ", productAvailability)
+            return productAvailability
+        }))
+    } catch (e) {
+        res.status(500).json([])
+    }
 })
 const getAvailabilityFromXml= (s: string) => {
     const data = JSON.parse(parser.toJson(s))
@@ -38,7 +44,11 @@ const getAvailabilityFromXml= (s: string) => {
 const getJsonResponse = async (path: string, retries = 1) => {
     for (let i = 0; i < retries; i++) {
         try {
-            const response = await axios.get(path)
+            const response = await axios.get(path, {
+                headers: {
+                    'x-force-error-mode': ''
+                }
+            })
             return response.data
         } catch (e) {
             console.log("Error fetching JSON from API: ", e.message, e)
