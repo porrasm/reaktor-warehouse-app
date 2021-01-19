@@ -9,6 +9,7 @@ const port = 3001
 const createServer = () => {
     const app = express()
     app.use(express.json())
+    app.use(express.static('build'))
     app.use(cors())
     app.use(morgan('tiny'))
     app.use('/api/', defaultRouter)

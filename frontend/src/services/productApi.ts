@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = 'http://localhost:3001/api/'
+const baseURL = '/api/'
 const timeout = 250
 
 let callID = 0

@@ -1,7 +1,6 @@
 import { stringify } from 'querystring';
 import React from 'react';
-import { Navbar, Nav, Form, FormControl, Button, Alert, Table, Col, Row, Card } from 'react-bootstrap'
-import { Container, Grid, Menu, Rail, Segment, Dropdown, Item, Message, List, Icon, Input, Pagination } from 'semantic-ui-react'
+import { Container, Grid, Menu, Rail, Segment, Dropdown, Item, Message, List, Icon, Input, Pagination, Button } from 'semantic-ui-react'
 import productApi from '../services/productApi'
 import { IProduct } from '../services/productApi'
 
@@ -48,21 +47,6 @@ class Listing extends React.Component<any, IViewState> {
   render() {
     return (
       <div>
-        <Navbar bg="dark" variant="dark">
-          <Navbar.Brand href="#home">Navbar</Navbar.Brand>
-          <Nav className="mr-auto">
-            <Nav.Link href="#home">Home</Nav.Link>
-            <Nav.Link href="#features">Features</Nav.Link>
-            <Nav.Link href="#pricing">Pricing</Nav.Link>
-            <p>test</p>
-          </Nav>
-
-          <Form inline>
-            <FormControl type="text" placeholder="Search" className="mr-sm-2" />
-            <Button variant="outline-info">Search</Button>
-          </Form>
-        </Navbar>
-
         <Container>
           <Grid centered columns={3}>
             <Grid.Column>
@@ -153,8 +137,6 @@ class Listing extends React.Component<any, IViewState> {
     const page = this.state.page * this.pageItemCount
     if (!products) {
       return
-    } else if (products.length == 0) {
-      return <Alert>Loading...</Alert>
     } else {
 
       return (
