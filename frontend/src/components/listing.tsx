@@ -1,11 +1,12 @@
 import { stringify } from 'querystring';
 import React from 'react';
-import { Container, Grid, Menu, Rail, Segment, Dropdown, Item, Message, List, Icon, Input, Pagination, Button } from 'semantic-ui-react'
+import { Container, Grid, Rail, Segment, Message } from 'semantic-ui-react'
 import productApi from '../services/productApi'
 import { IProduct } from '../services/productApi'
+import { ProductInfo, ProductList } from './product'
+import SideBar from './sidebar'
 
 export interface IViewState {
-  message: string,
   loadingMessage: string,
   category: string,
   manufacturer: string,
@@ -20,8 +21,6 @@ class Listing extends React.Component<any, IViewState> {
 
   pageItemCount = 20
   categories = ["gloves", "facemasks", "beanies"]
-  timer: any = null
-  filterUpdate: string = ""
 
   constructor(props: any) {
     super(props)
@@ -32,7 +31,6 @@ class Listing extends React.Component<any, IViewState> {
     });
 
     this.state = {
-      message: "",
       loadingMessage: "",
       category: "",
       manufacturer: "",
@@ -51,11 +49,34 @@ class Listing extends React.Component<any, IViewState> {
           <Grid centered columns={3}>
             <Grid.Column>
               <Segment>
-                {this.state.message == "" ? "" : <Message onClick={() => this.setState({ message: "" })}><Message.Content>{this.state.filter}</Message.Content></Message>}
-                {this.getProductListing(this.state.products[this.state.category])}
+                <ProductList products={this.filterProducts(this.getCurrentCategory()).map(p => {
+                  return {
+                    product: p,
+                    availability: this.getProductAvailability(p)
+                  }
+                })} clickHandler={this.selectProduct} />
 
-                <Rail position="left">{this.leftRail()}</Rail>
-                <Rail position="right">{this.productInfo(this.state.selectedProduct)}</Rail>
+                <Rail position="left">
+                  <SideBar
+                    currentCategory={this.state.category}
+                    categories={this.categories}
+                    selectCategory={this.selectCategory}
+                    currentManufacturer={this.state.manufacturer}
+                    manufacturers={this.getAvailableManufacturers(this.getCurrentCategory())}
+                    selectManufacturer={this.selectManufacturer}
+                    updateFilter={this.updateFilter}
+                    page={this.state.page}
+                    pageCount={this.getCurrentPageCount()}
+                    selectPage={this.selectPage}
+                    loadingMessage={this.state.loadingMessage}
+                  />
+                </Rail>
+
+                <Rail position="right">
+                  {this.state.selectedProduct ? <ProductInfo product={this.state.selectedProduct} availability={this.getProductAvailability(this.state.selectedProduct)} />
+                    : <Message><Message.Content>Select a product for more information</Message.Content></Message>}
+                </Rail>
+
               </Segment>
             </Grid.Column>
           </Grid>
@@ -65,99 +86,16 @@ class Listing extends React.Component<any, IViewState> {
   }
 
 
-  //#region views
-  leftRail = () => {
-
-    const pageCount = this.getCurrentPageCount()
-
-    return <div>
-      {this.getCategoryDropdown(this.categories)}
-      {this.getManufacturerDropdown()}
-      &nbsp;
-      <Input icon='search'
-        style={{ width: "272px" }}
-        onChange={(e, data) => this.filterUpdate = data.value}>
-        <input />
-        <Button type='submit' onClick={this.filterSearch}>Search</Button>
-      </Input>
-      &nbsp;
-      {pageCount > 0 ? <Pagination
-        style={{ width: "272px" }}
-        boundaryRange={0}
-        ellipsisItem={null}
-        firstItem={null}
-        lastItem={null}
-        siblingRange={1}
-        totalPages={pageCount}
-        activePage={this.state.page + 1}
-        onPageChange={(e, data) => { this.setState({ page: Number(data.activePage) - 1 }) }}
-      /> : ""}
-
-      &nbsp;
-      {this.state.loadingMessage.length == 0 ? "" : <Message icon><Icon name='circle notched' loading /><Message.Content>{this.state.loadingMessage}</Message.Content></Message>}
-    </div >
+  //#region utility
+  getCurrentCategory = () => {
+    return this.state.products[this.state.category]
   }
 
-  getCategoryDropdown = (categories: Array<string>) => {
-    return <Dropdown
-      placeholder="Select category"
-      fluid
-      selection
-      value={this.state.category}
-      onChange={(event, data) => this.selectCategory(data.value as string)}
-      options={categories.map(c => {
-        return {
-          key: c,
-          text: this.categoryToString(c),
-          value: c
-        }
-      })}
-    />
-  }
-
-  getManufacturerDropdown = () => {
-    const manufacturers = this.getAvailableManufacturers(this.state.products[this.state.category])
-    return <Dropdown
-      placeholder="Select Manufacturer"
-      fluid
-      selection
-      value={this.state.manufacturer}
-      onChange={(event, data) => this.selectManufacturer(data.value as string)}
-      options={manufacturers.map(c => {
-        return {
-          key: c,
-          text: this.categoryToString(c),
-          value: c
-        }
-      })}
-    />
-  }
-
-  getProductListing = (products: Array<IProduct>) => {
+  filterProducts = (products: IProduct[]) => {
     const page = this.state.page * this.pageItemCount
-    if (!products) {
-      return
-    } else {
-
-      return (
-        <List divided>
-          {products.filter(p => {
-            return this.state.manufacturer == p.manufacturer && p.name.toLocaleLowerCase().includes(this.state.filter.toLowerCase())
-          }).slice(page, page + this.pageItemCount)
-            .map(p => {
-              const availability: string | Element = this.getProductAvailability(p)
-              return <List.Item key={p.id} onClick={() => this.selectProduct(p)}>
-                <List.Content>
-                  <List.Header as='a'>{p.name}</List.Header>
-                  {availability == "" ? "" : <List.Description>Availability: {availability}</List.Description>}
-
-                  <List.Description>Price: {p.price}</List.Description>
-                </List.Content>
-              </List.Item>
-            })}
-        </List>
-      )
-    }
+    return products.filter(p => {
+      return this.state.manufacturer == p.manufacturer && p.name.toLocaleLowerCase().includes(this.state.filter.toLowerCase())
+    }).slice(page, page + this.pageItemCount)
   }
 
   getProductAvailability = (p: IProduct) => {
@@ -168,41 +106,12 @@ class Listing extends React.Component<any, IViewState> {
     return availability ? availability : "Error"
   }
 
-  productInfo = (product: IProduct | null) => {
-    if (!product) {
-      return <Message>Select a product to view more info</Message>
-    }
-    return <Container>
-      <Item>
-        <Item.Content>
-          <Item.Header>{product.name}</Item.Header>
-          <Item.Description>
-            Availability: {this.getProductAvailability(product)}
-          </Item.Description>
-          <Item.Description>
-            Price: {product.price}
-          </Item.Description>
-          <Item.Description>
-            Manufacturer: {product.manufacturer}
-          </Item.Description>
-          <Item.Description>
-            Color: {product.color.join(", ")}
-          </Item.Description>
-          <Item.Description>
-            Type: {product.type}
-          </Item.Description>
-          <Item.Description>
-            ID: {product.id}
-          </Item.Description>
-        </Item.Content>
-      </Item>
-    </Container>
+  selectPage = (page: number) => {
+    this.setState({ page })
   }
-  //#endregion
 
-  //#region utility
-  filterSearch = () => {
-    this.setState({ filter: this.filterUpdate, page: 0 })
+  updateFilter = (filter: string) => {
+    this.setState({ filter, page: 0 })
   }
 
   getCurrentPageCount = () => {
@@ -278,7 +187,7 @@ class Listing extends React.Component<any, IViewState> {
     this.setState({ availability, loadingMessage: "" })
   }
 
-  getAvailableManufacturers = (products: Array<IProduct>): string[] => {
+  getAvailableManufacturers = (products: IProduct[]): string[] => {
     if (!products) {
       return []
     }
@@ -291,10 +200,6 @@ class Listing extends React.Component<any, IViewState> {
       manufacturers.push(m)
     })
     return manufacturers.sort()
-  }
-
-  categoryToString = (cat: string) => {
-    return cat.substring(0, 1).toUpperCase() + cat.substring(1)
   }
   //#endregion
 }

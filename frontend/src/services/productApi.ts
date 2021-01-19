@@ -9,7 +9,7 @@ export interface IProduct {
   id: string,
   type: string,
   name: string,
-  color: Array<string>,
+  color: string[],
   price: number,
   manufacturer: string
 }
@@ -19,7 +19,7 @@ export interface IAvailability {
   availability: string
 }
 
-const getCategoryProducts = async (category: string, retries = 6): Promise<Array<IProduct>> => {
+const getCategoryProducts = async (category: string, retries = 6): Promise<IProduct[]> => {
   const id = ++callID
   for (let i = 0; i < retries; i++) {
     if (id !== callID) {
@@ -29,7 +29,7 @@ const getCategoryProducts = async (category: string, retries = 6): Promise<Array
     try {
       const response = await axios.get(apiPath(["products", category]))
       if (response.status = 200) {
-        return response.data as Array<IProduct>
+        return response.data as IProduct[]
       } else {
         console.log("Error fetchin product data: ", response)
         return []
@@ -44,7 +44,7 @@ const getCategoryProducts = async (category: string, retries = 6): Promise<Array
 }
 
 
-const getManufacturerAvailability = async (manufacturer: string, retries = 6): Promise<Array<IAvailability>> => {
+const getManufacturerAvailability = async (manufacturer: string, retries = 6): Promise<IAvailability[]> => {
   const id = ++callID
   for (let i = 0; i < retries; i++) {
     if (id !== callID) {
@@ -54,7 +54,7 @@ const getManufacturerAvailability = async (manufacturer: string, retries = 6): P
     try {
       const response = await axios.get(apiPath(["availability", manufacturer]))
       if (response.status == 200) {
-        return response.data as Array<IAvailability>
+        return response.data as IAvailability[]
       } else {
         console.log("Error fetching availability data: ", response)
         return []
@@ -73,7 +73,7 @@ const delay = (ms: number) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const apiPath = (path: Array<string>) => {
+const apiPath = (path: string[]) => {
   return baseURL + path.join("/")
 }
 
