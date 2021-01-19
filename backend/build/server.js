@@ -8,7 +8,7 @@ var cors_1 = __importDefault(require("cors"));
 var express_1 = __importDefault(require("express"));
 var morgan_1 = __importDefault(require("morgan"));
 var defaultRouter_1 = __importDefault(require("./controllers/defaultRouter"));
-var port = 3001;
+var port = process.env.PORT || 3001;
 var createServer = function () {
     var app = express_1.default();
     app.use(express_1.default.json());

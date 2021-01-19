@@ -4,7 +4,7 @@ import express from 'express'
 import morgan from 'morgan'
 import defaultRouter from './controllers/defaultRouter'
 
-const port = 3001
+const port = process.env.PORT || 3001
 
 const createServer = () => {
     const app = express()
