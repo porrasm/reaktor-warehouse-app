@@ -1,72 +1,42 @@
 import axios from 'axios'
+import { IProduct, IAvailability } from '../../../general_types'
 
 const baseURL = '/api/'
 const timeout = 250
 
-let callID = 0
+// Used to cancel API call retries if another API call is requested
+let apiRetryID = 0
 
-export interface IProduct {
-  id: string,
-  type: string,
-  name: string,
-  color: string[],
-  price: number,
-  manufacturer: string
+
+const getCategoryProducts = async (category: string): Promise<IProduct[]> => {
+  const products = await getAPIResponse<IProduct[]>(apiPath(["products", category]))
+  return products ? products : []
 }
 
-export interface IAvailability {
-  id: string,
-  availability: string
+const getManufacturerAvailability = async (manufacturer: string): Promise<IAvailability[]> => {
+  const availability = await getAPIResponse<IAvailability[]>(apiPath(["availability", manufacturer]))
+  return availability ? availability : []
 }
 
-const getCategoryProducts = async (category: string, retries = 6): Promise<IProduct[]> => {
-  const id = ++callID
+const getAPIResponse = async <T>(path: string, retries = 6): Promise<T | null> => {
+  const retryID = ++apiRetryID
   for (let i = 0; i < retries; i++) {
-    if (id !== callID) {
+    if (retryID !== apiRetryID) {
       break
     }
-    console.log(`API request for products (retries left: ${retries - 1 - i}): `, category)
     try {
-      const response = await axios.get(apiPath(["products", category]))
-      if (response.status = 200) {
-        return response.data as IProduct[]
-      } else {
-        console.log("Error fetchin product data: ", response)
-        return []
+      const response = await axios.get(path)
+      if (response.status != 200) {
+        throw "Invalid response status received: " + response.status
       }
+      return response.data as T
     } catch (e) {
-      console.log('Error getting products: ', { category, message: e.message, e })
+      console.log("Error fetching JSON from API: ", e.message, e)
     }
 
     await delay(timeout)
   }
-  return []
-}
-
-
-const getManufacturerAvailability = async (manufacturer: string, retries = 6): Promise<IAvailability[]> => {
-  const id = ++callID
-  for (let i = 0; i < retries; i++) {
-    if (id !== callID) {
-      break
-    }
-    console.log(`API request for availability (retries left: ${retries - 1 - i}): `, manufacturer)
-    try {
-      const response = await axios.get(apiPath(["availability", manufacturer]))
-      if (response.status == 200) {
-        return response.data as IAvailability[]
-      } else {
-        console.log("Error fetching availability data: ", response)
-        return []
-      }
-
-    } catch (e) {
-      console.log('Error getting availability: ', { manufacturer, message: e.message, e })
-    }
-
-    await delay(timeout)
-  }
-  return []
+  return null
 }
 
 const delay = (ms: number) => {
@@ -79,5 +49,5 @@ const apiPath = (path: string[]) => {
 
 export default {
   getCategoryProducts,
-  getManufacturerAvailability,
+  getManufacturerAvailability
 }

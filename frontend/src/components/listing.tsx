@@ -1,8 +1,7 @@
-import { stringify } from 'querystring';
 import React from 'react';
 import { Container, Grid, Rail, Segment, Message } from 'semantic-ui-react'
 import productApi from '../services/productApi'
-import { IProduct } from '../services/productApi'
+import { IProduct } from '../../../general_types'
 import { ProductInfo, ProductList } from './product'
 import SideBar from './sidebar'
 
@@ -43,13 +42,16 @@ class Listing extends React.Component<any, IViewState> {
   }
 
   render() {
+    const currentProducts = this.filterProducts(this.getCurrentCategory())
+    const currentManufacturers = this.getAvailableManufacturers(this.getCurrentCategory())
+
     return (
       <div>
         <Container>
           <Grid centered columns={3}>
             <Grid.Column>
               <Segment>
-                <ProductList products={this.filterProducts(this.getCurrentCategory()).map(p => {
+                <ProductList products={currentProducts.map(p => {
                   return {
                     product: p,
                     availability: this.getProductAvailability(p)
@@ -62,7 +64,7 @@ class Listing extends React.Component<any, IViewState> {
                     categories={this.categories}
                     selectCategory={this.selectCategory}
                     currentManufacturer={this.state.manufacturer}
-                    manufacturers={this.getAvailableManufacturers(this.getCurrentCategory())}
+                    manufacturers={currentManufacturers}
                     selectManufacturer={this.selectManufacturer}
                     updateFilter={this.updateFilter}
                     page={this.state.page}
@@ -88,7 +90,8 @@ class Listing extends React.Component<any, IViewState> {
 
   //#region utility
   getCurrentCategory = () => {
-    return this.state.products[this.state.category]
+    const products = this.state.products[this.state.category]
+    return products ? products : []
   }
 
   filterProducts = (products: IProduct[]) => {

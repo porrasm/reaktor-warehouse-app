@@ -39,104 +39,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var express_1 = require("express");
 var axios_1 = __importDefault(require("axios"));
-var timer_1 = __importDefault(require("../tools/timer"));
-var xml2json_1 = __importDefault(require("xml2json"));
-var router = express_1.Router();
-var baseURL = "https://bad-api-assignment.reaktor.com/v2/";
-var timeout = 250;
-router.get('/', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        console.log('Get');
-        res.json({ success: true });
-        return [2 /*return*/];
-    });
-}); });
-router.get('/products/:category', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, _a, _b;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
-            case 0:
-                path = apiPath(["products", req.params.category]);
-                _b = (_a = res).json;
-                return [4 /*yield*/, getJsonResponse(path)];
-            case 1:
-                _b.apply(_a, [_c.sent()]);
-                return [2 /*return*/];
-        }
-    });
-}); });
-router.get('/availability/:manufacturer', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, data;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                path = apiPath(["availability", req.params.manufacturer]);
-                return [4 /*yield*/, getJsonResponse(path)];
-            case 1:
-                data = _a.sent();
-                console.log("Received availability: ", data);
-                try {
-                    res.json(data.response.map(function (p) {
-                        var productAvailability = {
-                            id: p.id,
-                            availability: getAvailabilityFromXml(p.DATAPAYLOAD)
-                        };
-                        console.log("Product availability: ", productAvailability);
-                        return productAvailability;
-                    }));
-                }
-                catch (e) {
-                    res.status(500).json([]);
-                }
-                return [2 /*return*/];
-        }
-    });
-}); });
-var getAvailabilityFromXml = function (s) {
-    var data = JSON.parse(xml2json_1.default.toJson(s));
-    return data["AVAILABILITY"]["INSTOCKVALUE"];
-};
-var getJsonResponse = function (path, retries) {
-    if (retries === void 0) { retries = 1; }
+var getJsonResponse = function (path, errorMode) {
+    if (errorMode === void 0) { errorMode = ""; }
     return __awaiter(void 0, void 0, void 0, function () {
-        var i, response, e_1;
+        var response, e_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    i = 0;
-                    _a.label = 1;
-                case 1:
-                    if (!(i < retries)) return [3 /*break*/, 8];
-                    _a.label = 2;
-                case 2:
-                    _a.trys.push([2, 4, , 5]);
+                    _a.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, axios_1.default.get(path, {
                             headers: {
-                                'x-force-error-mode': ''
+                                'x-force-error-mode': errorMode
                             }
                         })];
-                case 3:
+                case 1:
                     response = _a.sent();
                     return [2 /*return*/, response.data];
-                case 4:
+                case 2:
                     e_1 = _a.sent();
                     console.log("Error fetching JSON from API: ", e_1.message, e_1);
-                    return [3 /*break*/, 5];
-                case 5: return [4 /*yield*/, timer_1.default(timeout)];
-                case 6:
-                    _a.sent();
-                    _a.label = 7;
-                case 7:
-                    i++;
-                    return [3 /*break*/, 1];
-                case 8: return [2 /*return*/];
+                    throw e_1;
+                case 3: return [2 /*return*/];
             }
         });
     });
 };
-var apiPath = function (path) {
-    return baseURL + path.join("/");
-};
-exports.default = router;
+exports.default = getJsonResponse;

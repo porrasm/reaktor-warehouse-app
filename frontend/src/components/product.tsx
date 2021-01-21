@@ -1,4 +1,4 @@
-import { IProduct } from '../services/productApi'
+import { IProduct } from '../../../general_types'
 import { Item, List } from 'semantic-ui-react'
 
 type ProductProps = {
