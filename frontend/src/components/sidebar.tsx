@@ -52,8 +52,8 @@ const SideBar = (props: SideBarProps) => {
       lastItem={null}
       siblingRange={1}
       totalPages={props.pageCount}
-      activePage={props.page + 1}
-      onPageChange={(e, data) => props.selectPage(Number(data.activePage) - 1)}
+      activePage={props.page}
+      onPageChange={(e, data) => props.selectPage(Number(data.activePage))}
     /> : ""}
     &nbsp;
       {props.loadingMessage.length == 0 ? "" : <Message icon>

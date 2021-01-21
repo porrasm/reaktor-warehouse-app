@@ -2,27 +2,25 @@ import { IProduct } from '../../../general_types'
 import { Item, List } from 'semantic-ui-react'
 
 type ProductProps = {
-  product: IProduct,
-  availability: string
+  product: IProduct
 }
 
 type ProductListProps = {
-  products: ProductProps[],
+  products: IProduct[],
   clickHandler: (product: IProduct) => void
 }
 
 type ProductListItemProps = {
   product: IProduct,
-  availability: string,
   clickHandler: () => void
 }
 
 
-export const ProductInfo = ({ product, availability }: ProductProps) => <Item>
+export const ProductInfo = ({ product }: ProductProps) => <Item>
   <Item.Content>
     <Item.Header>{product.name}</Item.Header>
     <Item.Description>
-      Availability: {availability}
+      Availability: {product.availability}
     </Item.Description>
     <Item.Description>
       Price: {product.price}
@@ -44,21 +42,20 @@ export const ProductInfo = ({ product, availability }: ProductProps) => <Item>
 
 export const ProductList = ({ products, clickHandler }: ProductListProps) => <List divided>
   {products.map(p => {
-    return <List.Item key={p.product.id} onClick={() => clickHandler(p.product)}>
+    return <List.Item key={p.id} onClick={() => clickHandler(p)}>
       <List.Content>
-        <List.Header as='a'>{p.product.name}</List.Header>
-        {p.availability == "" ? "" : <List.Description>Availability: {p.availability}</List.Description>}
-
-        <List.Description>Price: {p.product.price}</List.Description>
+        <List.Header as='a'>{p.name}</List.Header>
+        <List.Description>Availability: {p.availability}</List.Description>
+        <List.Description>Price: {p.price}</List.Description>
       </List.Content>
     </List.Item>
   })}
 </List>
 
-export const ProductListItem = ({ product, availability, clickHandler }: ProductListItemProps) => <List.Item key={product.id} onClick={clickHandler}>
+export const ProductListItem = ({ product, clickHandler }: ProductListItemProps) => <List.Item key={product.id} onClick={clickHandler}>
   <List.Content>
     <List.Header as='a'>{product.name}</List.Header>
-    {availability == "" ? "" : <List.Description>Availability: {availability}</List.Description>}
+    {product.availability == "" ? "" : <List.Description>Availability: {product.availability}</List.Description>}
 
     <List.Description>Price: {product.price}</List.Description>
   </List.Content>

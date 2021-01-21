@@ -4,7 +4,8 @@ export interface IProduct {
   name: string,
   color: string[],
   price: number,
-  manufacturer: string
+  manufacturer: string,
+  availability: string,
 }
 
 export interface IAvailability {

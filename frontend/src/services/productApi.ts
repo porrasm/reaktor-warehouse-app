@@ -8,24 +8,34 @@ const timeout = 250
 let apiRetryID = 0
 
 
-const getCategoryProducts = async (category: string): Promise<IProduct[]> => {
-  const products = await getAPIResponse<IProduct[]>(apiPath(["products", category]))
+const getCategories = async (): Promise<string[]> => {
+  const categories = await getAPIResponse<string[]>(apiPath(["products", "categories"]))
+  return categories ? categories : []
+}
+const getManufacturers = async (category: string): Promise<string[]> => {
+  const manufacturers = await getAPIResponse<string[]>(apiPath(["products", "manufacturers"]), 6, { category })
+  return manufacturers ? manufacturers : []
+}
+const getProducts = async (category: string, manufacturer: string, page: number, filter: string): Promise<IProduct[]> => {
+  const params = {
+    category,
+    page,
+    filter,
+    manufacturer,
+    pageItemCount: 100
+  }
+  const products = await getAPIResponse<IProduct[]>(apiPath(["products"]), 6, params)
   return products ? products : []
 }
 
-const getManufacturerAvailability = async (manufacturer: string): Promise<IAvailability[]> => {
-  const availability = await getAPIResponse<IAvailability[]>(apiPath(["availability", manufacturer]))
-  return availability ? availability : []
-}
-
-const getAPIResponse = async <T>(path: string, retries = 6): Promise<T | null> => {
+const getAPIResponse = async <T>(path: string, retries = 6, params: any = {}): Promise<T | null> => {
   const retryID = ++apiRetryID
   for (let i = 0; i < retries; i++) {
     if (retryID !== apiRetryID) {
       break
     }
     try {
-      const response = await axios.get(path)
+      const response = await axios.get(path, { params })
       if (response.status != 200) {
         throw "Invalid response status received: " + response.status
       }
@@ -48,6 +58,7 @@ const apiPath = (path: string[]) => {
 }
 
 export default {
-  getCategoryProducts,
-  getManufacturerAvailability
+  getCategories,
+  getManufacturers,
+  getProducts
 }

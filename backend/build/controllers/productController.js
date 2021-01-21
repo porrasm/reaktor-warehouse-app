@@ -40,27 +40,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = require("express");
-var getJson_1 = __importDefault(require("../utils/getJson"));
+var warehouseAPI_1 = __importDefault(require("../API/warehouseAPI"));
 var router = express_1.Router();
-var baseURL = "https://bad-api-assignment.reaktor.com/v2/products/";
-var timeout = 250;
-router.get('/:category', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, _a, _b, error_1;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
-            case 0:
-                _c.trys.push([0, 2, , 3]);
-                path = baseURL + req.params.category;
-                _b = (_a = res).json;
-                return [4 /*yield*/, getJson_1.default(path)];
+var categories = ["gloves", "facemasks", "beanies"];
+router.get('/categories', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        res.json(categories);
+        return [2 /*return*/];
+    });
+}); });
+router.get('/manufacturers', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var manufacturers;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, warehouseAPI_1.default.getManufacturers(req.query.category)];
             case 1:
-                _b.apply(_a, [_c.sent()]);
-                return [3 /*break*/, 3];
-            case 2:
-                error_1 = _c.sent();
-                res.status(500).json([]);
-                return [3 /*break*/, 3];
-            case 3: return [2 /*return*/];
+                manufacturers = _a.sent();
+                manufacturers ? res.json(manufacturers) : res.status(500);
+                return [2 /*return*/];
+        }
+    });
+}); });
+router.get('/', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var products;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                console.log("--GET REQUEST PRODUCTS: ", req.query);
+                return [4 /*yield*/, warehouseAPI_1.default.getProducts(req.query.category, req.query.manufacturer, Number(req.query.page) - 1, Number(req.query.pageItemCount), req.query.filter)];
+            case 1:
+                products = _a.sent();
+                products ? res.json(products) : res.status(500);
+                return [2 /*return*/];
         }
     });
 }); });

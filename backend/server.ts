@@ -3,7 +3,6 @@ import cors from 'cors'
 import express from 'express'
 import morgan from 'morgan'
 import productRouter from './controllers/productController'
-import availabilityRouter from './controllers/availabilityController'
 
 const port = process.env.PORT || 3001
 
@@ -14,7 +13,6 @@ const createServer = () => {
     app.use(cors())
     app.use(morgan('tiny'))
     app.use('/api/products/', productRouter)
-    app.use('/api/availability/', availabilityRouter)
     const server = http.createServer(app)
     server.listen(port, () => console.log(`Server running on port ${port}`))
 }

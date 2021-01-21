@@ -8,7 +8,6 @@ var cors_1 = __importDefault(require("cors"));
 var express_1 = __importDefault(require("express"));
 var morgan_1 = __importDefault(require("morgan"));
 var productController_1 = __importDefault(require("./controllers/productController"));
-var availabilityController_1 = __importDefault(require("./controllers/availabilityController"));
 var port = process.env.PORT || 3001;
 var createServer = function () {
     var app = express_1.default();
@@ -17,7 +16,6 @@ var createServer = function () {
     app.use(cors_1.default());
     app.use(morgan_1.default('tiny'));
     app.use('/api/products/', productController_1.default);
-    app.use('/api/availability/', availabilityController_1.default);
     var server = http_1.default.createServer(app);
     server.listen(port, function () { return console.log("Server running on port " + port); });
 };

@@ -9,9 +9,9 @@ export interface IViewState {
   loadingMessage: string,
   category: string,
   manufacturer: string,
+  manufacturers: string[],
+  products: IProduct[],
   selectedProduct: IProduct | null,
-  products: { [name: string]: Array<IProduct> },
-  availability: { [name: string]: { [name: string]: string } },
   page: number,
   filter: string
 }
@@ -33,17 +33,15 @@ class Listing extends React.Component<any, IViewState> {
       loadingMessage: "",
       category: "",
       manufacturer: "",
+      manufacturers: [],
+      products: [],
       selectedProduct: null,
-      products: productDict,
-      availability: {},
-      page: 0,
+      page: 1,
       filter: ""
     }
   }
 
   render() {
-    const currentProducts = this.filterProducts(this.getCurrentCategory())
-    const currentManufacturers = this.getAvailableManufacturers(this.getCurrentCategory())
 
     return (
       <div>
@@ -51,12 +49,7 @@ class Listing extends React.Component<any, IViewState> {
           <Grid centered columns={3}>
             <Grid.Column>
               <Segment>
-                <ProductList products={currentProducts.map(p => {
-                  return {
-                    product: p,
-                    availability: this.getProductAvailability(p)
-                  }
-                })} clickHandler={this.selectProduct} />
+                <ProductList products={this.state.products} clickHandler={this.selectProduct} />
 
                 <Rail position="left">
                   <SideBar
@@ -64,7 +57,7 @@ class Listing extends React.Component<any, IViewState> {
                     categories={this.categories}
                     selectCategory={this.selectCategory}
                     currentManufacturer={this.state.manufacturer}
-                    manufacturers={currentManufacturers}
+                    manufacturers={this.state.manufacturers}
                     selectManufacturer={this.selectManufacturer}
                     updateFilter={this.updateFilter}
                     page={this.state.page}
@@ -75,7 +68,7 @@ class Listing extends React.Component<any, IViewState> {
                 </Rail>
 
                 <Rail position="right">
-                  {this.state.selectedProduct ? <ProductInfo product={this.state.selectedProduct} availability={this.getProductAvailability(this.state.selectedProduct)} />
+                  {this.state.selectedProduct ? <ProductInfo product={this.state.selectedProduct} />
                     : <Message><Message.Content>Select a product for more information</Message.Content></Message>}
                 </Rail>
 
@@ -89,40 +82,25 @@ class Listing extends React.Component<any, IViewState> {
 
 
   //#region utility
-  getCurrentCategory = () => {
-    const products = this.state.products[this.state.category]
-    return products ? products : []
-  }
-
-  filterProducts = (products: IProduct[]) => {
-    const page = this.state.page * this.pageItemCount
-    return products.filter(p => {
-      return this.state.manufacturer == p.manufacturer && p.name.toLocaleLowerCase().includes(this.state.filter.toLowerCase())
-    }).slice(page, page + this.pageItemCount)
-  }
-
-  getProductAvailability = (p: IProduct) => {
-    if (!this.state.availability[p.manufacturer]) {
-      return ""
-    }
-    const availability = this.state.availability[p.manufacturer][p.id]
-    return availability ? availability : "Error"
-  }
-
   selectPage = (page: number) => {
-    this.setState({ page })
+    console.log("Select page: ", page)
+    this.updateProducts(page, this.state.filter)
   }
 
   updateFilter = (filter: string) => {
-    this.setState({ filter, page: 0 })
+    this.updateProducts(1, filter)
+  }
+
+  updateProducts = async (page: number = 1, filter: string = "") => {
+    console.log("Update products with page: ", page)
+    this.setState({ loadingMessage: "Loading products...", products: [] })
+    const products = await productApi.getProducts(this.state.category, this.state.manufacturer, page, filter)
+    this.setState({ products, loadingMessage: "", page, filter })
   }
 
   getCurrentPageCount = () => {
-    const products = this.state.products[this.state.category]
-    if (!products) {
-      return 0
-    }
-    return Math.ceil(products.length / this.pageItemCount)
+    return 100000
+    return Math.ceil(this.state.products.length / this.pageItemCount)
   }
 
   selectProduct = async (selectedProduct: IProduct) => {
@@ -132,77 +110,24 @@ class Listing extends React.Component<any, IViewState> {
 
   selectCategory = async (category: string) => {
     const prevCategory = this.state.category
-
-    if (this.state.products[category].length > 0) {
-      this.setState({ category, page: 0 })
-      return
-    }
-    this.setState({ category, loadingMessage: "Loading products...", page: 0 })
-
+    this.setState({ category, loadingMessage: "Loading manufacturers..." })
     console.log("Enabled category: ", category)
 
-    const products = (await productApi.getCategoryProducts(category)).sort((a, b) => a.name.localeCompare(b.name))
-    if (products.length == 0) {
-      window.alert("There seems to be a problem accessing the database. Please try again later.")
-      this.setState({ category: prevCategory, loadingMessage: "" })
+    const manufacturers = await productApi.getManufacturers(category)
+    this.setState({ manufacturers, loadingMessage: "" })
+
+    if (manufacturers.length == 0) {
+      window.alert("There seems to be an error accessing the API. Please try again.")
       return
     }
 
-    const manufacturer = products.length > 0 ? this.getAvailableManufacturers(products)[0] : ""
-
-    const productDict = this.state.products
-    productDict[category] = products
-
-    this.setState({ products: productDict, loadingMessage: "" })
-    this.selectManufacturer(manufacturer)
+    this.selectManufacturer(manufacturers[0])
   }
 
   selectManufacturer = async (manufacturer: string) => {
-    console.log("Selected manufacturer: ", manufacturer)
-
-    if (manufacturer == "") {
-      return
-    }
-
-    if (this.state.availability[manufacturer]) {
-      console.log("Already got information from manufacturer: ", manufacturer)
-      this.setState({ manufacturer, page: 0 })
-      return
-    }
-    this.setState({ manufacturer, loadingMessage: "Loading stock data...", page: 0 })
-
-    const manAvailabilityArray = await productApi.getManufacturerAvailability(manufacturer)
-    if (manAvailabilityArray.length == 0) {
-      if (manufacturer === this.state.manufacturer) {
-        window.alert("The availability data could not be accessed. There might be a problem with the database. Please try again later.")
-      }
-      return
-    }
-
-    console.log("Received availability array: ", manAvailabilityArray)
-    const manAvailability: { [name: string]: string } = {}
-    manAvailabilityArray.forEach(a => {
-      manAvailability[a.id.toLowerCase()] = a.availability
-    });
-
-    const availability = this.state.availability
-    availability[manufacturer] = manAvailability
-    this.setState({ availability, loadingMessage: "" })
-  }
-
-  getAvailableManufacturers = (products: IProduct[]): string[] => {
-    if (!products) {
-      return []
-    }
-    const hs = new Set<string>()
-    products.forEach(p => {
-      hs.add(p.manufacturer)
-    });
-    const manufacturers: string[] = []
-    hs.forEach(m => {
-      manufacturers.push(m)
-    })
-    return manufacturers.sort()
+    this.setState({ manufacturer })
+    console.log("Enabled manufacturer: ", manufacturer)
+    this.updateProducts()
   }
   //#endregion
 }
