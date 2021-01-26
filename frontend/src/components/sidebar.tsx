@@ -23,7 +23,7 @@ type DDownProps = {
   options: string[]
 }
 
-const SideBar = (props: SideBarProps) => {
+const SideBar: React.FC<SideBarProps> = (props: SideBarProps) => {
 
   const [filter, setFilter] = useState("")
 
@@ -63,7 +63,7 @@ const SideBar = (props: SideBarProps) => {
   </div>
 }
 
-const DDown = (props: DDownProps) => <Dropdown
+const DDown: React.FC<DDownProps> = (props: DDownProps) => <Dropdown
   placeholder={props.placeholder}
   fluid
   selection

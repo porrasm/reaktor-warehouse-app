@@ -6,30 +6,33 @@ import { ProductInfo, ProductList } from './product'
 import SideBar from './sidebar'
 
 export interface IViewState {
-  loadingMessage: string,
-  category: string,
-  manufacturer: string,
-  manufacturers: string[],
-  products: IProduct[],
-  selectedProduct: IProduct | null,
-  page: number,
+  categories: string[]
+  loadingMessage: string
+  category: string
+  manufacturer: string
+  manufacturers: string[]
+  products: IProduct[]
+  selectedProduct: IProduct | null
+  page: number
   filter: string
+}
+
+interface IProductUpdateParams {
+  category?: string
+  manufacturer?: string
+  page?: number
+  filter?: string
 }
 
 class Listing extends React.Component<any, IViewState> {
 
   pageItemCount = 20
-  categories = ["gloves", "facemasks", "beanies"]
 
   constructor(props: any) {
     super(props)
 
-    const productDict: { [name: string]: Array<IProduct> } = {}
-    this.categories.forEach(c => {
-      productDict[c] = []
-    });
-
     this.state = {
+      categories: [],
       loadingMessage: "",
       category: "",
       manufacturer: "",
@@ -39,6 +42,14 @@ class Listing extends React.Component<any, IViewState> {
       page: 1,
       filter: ""
     }
+  }
+
+  componentDidMount() {
+    this.loadCategories()
+  }
+  loadCategories = async () => {
+    const categories = await productApi.getCategories()
+    this.setState({ categories })
   }
 
   render() {
@@ -54,7 +65,7 @@ class Listing extends React.Component<any, IViewState> {
                 <Rail position="left">
                   <SideBar
                     currentCategory={this.state.category}
-                    categories={this.categories}
+                    categories={this.state.categories}
                     selectCategory={this.selectCategory}
                     currentManufacturer={this.state.manufacturer}
                     manufacturers={this.state.manufacturers}
@@ -84,18 +95,11 @@ class Listing extends React.Component<any, IViewState> {
   //#region utility
   selectPage = (page: number) => {
     console.log("Select page: ", page)
-    this.updateProducts(page, this.state.filter)
+    this.updateProducts({ page, filter: this.state.filter })
   }
 
   updateFilter = (filter: string) => {
-    this.updateProducts(1, filter)
-  }
-
-  updateProducts = async (page: number = 1, filter: string = "") => {
-    console.log("Update products with page: ", page)
-    this.setState({ loadingMessage: "Loading products...", products: [] })
-    const products = await productApi.getProducts(this.state.category, this.state.manufacturer, page, filter)
-    this.setState({ products, loadingMessage: "", page, filter })
+    this.updateProducts({ page: 1, filter })
   }
 
   getCurrentPageCount = () => {
@@ -103,31 +107,40 @@ class Listing extends React.Component<any, IViewState> {
     return Math.ceil(this.state.products.length / this.pageItemCount)
   }
 
-  selectProduct = async (selectedProduct: IProduct) => {
-    console.log("Selected product: ", selectedProduct)
-    this.setState({ selectedProduct })
+  selectManufacturer = async (manufacturer: string) => {
+    console.log("Enabled manufacturer: ", manufacturer)
+    this.setState({ manufacturer })
+    this.updateProducts({ manufacturer })
   }
+  //#endregion
 
+  //#region state
   selectCategory = async (category: string) => {
     const prevCategory = this.state.category
     this.setState({ category, loadingMessage: "Loading manufacturers..." })
     console.log("Enabled category: ", category)
 
     const manufacturers = await productApi.getManufacturers(category)
-    this.setState({ manufacturers, loadingMessage: "" })
+    this.setState({ manufacturers })
 
     if (manufacturers.length == 0) {
       window.alert("There seems to be an error accessing the API. Please try again.")
       return
     }
 
-    this.selectManufacturer(manufacturers[0])
+    this.updateProducts({ category, manufacturer: manufacturers[0] })
   }
 
-  selectManufacturer = async (manufacturer: string) => {
-    this.setState({ manufacturer })
-    console.log("Enabled manufacturer: ", manufacturer)
-    this.updateProducts()
+  updateProducts = async ({ category = this.state.category, manufacturer = this.state.manufacturer, page = 1, filter = "" }: IProductUpdateParams) => {
+    console.log("Update products with page: ", page)
+    this.setState({ loadingMessage: "Loading products...", products: [] })
+    const products = await productApi.getProducts(category, manufacturer, page, filter)
+    this.setState({ products, loadingMessage: "", category, manufacturer, page, filter })
+  }
+
+  selectProduct = async (selectedProduct: IProduct) => {
+    console.log("Selected product: ", selectedProduct)
+    this.setState({ selectedProduct })
   }
   //#endregion
 }

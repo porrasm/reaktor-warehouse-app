@@ -2,7 +2,6 @@ import axios from 'axios'
 import { IProduct, IAvailability } from '../../../general_types'
 
 const baseURL = '/api/'
-const timeout = 250
 
 // Used to cancel API call retries if another API call is requested
 let apiRetryID = 0
@@ -44,14 +43,12 @@ const getAPIResponse = async <T>(path: string, retries = 6, params: any = {}): P
       console.log("Error fetching JSON from API: ", e.message, e)
     }
 
-    await delay(timeout)
+    //await delay(timeout)
   }
   return null
 }
 
-const delay = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+
 
 const apiPath = (path: string[]) => {
   return baseURL + path.join("/")

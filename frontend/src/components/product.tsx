@@ -16,7 +16,7 @@ type ProductListItemProps = {
 }
 
 
-export const ProductInfo = ({ product }: ProductProps) => <Item>
+export const ProductInfo : React.FC<ProductProps> = ({ product }: ProductProps) => <Item>
   <Item.Content>
     <Item.Header>{product.name}</Item.Header>
     <Item.Description>
@@ -40,7 +40,7 @@ export const ProductInfo = ({ product }: ProductProps) => <Item>
   </Item.Content>
 </Item>
 
-export const ProductList = ({ products, clickHandler }: ProductListProps) => <List divided>
+export const ProductList: React.FC<ProductListProps> = ({ products, clickHandler }: ProductListProps) => <List divided>
   {products.map(p => {
     return <List.Item key={p.id} onClick={() => clickHandler(p)}>
       <List.Content>
@@ -52,7 +52,7 @@ export const ProductList = ({ products, clickHandler }: ProductListProps) => <Li
   })}
 </List>
 
-export const ProductListItem = ({ product, clickHandler }: ProductListItemProps) => <List.Item key={product.id} onClick={clickHandler}>
+export const ProductListItem: React.FC<ProductListItemProps> = ({ product, clickHandler }: ProductListItemProps) => <List.Item key={product.id} onClick={clickHandler}>
   <List.Content>
     <List.Header as='a'>{product.name}</List.Header>
     {product.availability == "" ? "" : <List.Description>Availability: {product.availability}</List.Description>}

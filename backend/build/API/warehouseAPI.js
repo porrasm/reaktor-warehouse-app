@@ -51,6 +51,7 @@ var cachedObjectLifetime = 300;
 var baseURL = "https://bad-api-assignment.reaktor.com/v2";
 var cache = {
     products: {},
+    availability: {},
     productUpdateTimes: {},
     availabilityUpdateTimes: {}
 };
@@ -124,22 +125,12 @@ var getAvailabilityFromXml = function (s) {
 //#region saving
 var saveProducts = function (category, products) {
     cache.products[category] = products;
+    cache.productUpdateTimes[category] = getSeconds();
 };
-var saveAvailability = function (manufacturer, availability) {
-    var manAvailability = {};
-    availability.forEach(function (a) {
-        manAvailability[a.id.toLowerCase()] = a.availability;
+var saveAvailability = function (manufacturer, availabilityArray) {
+    availabilityArray.forEach(function (a) {
+        cache.availability[a.id.toLowerCase()] = a.availability;
     });
-    for (var category in cache.products) {
-        var products = cache.products[category];
-        for (var i = 0; i < products.length; i++) {
-            var availability_1 = manAvailability[products[i].id];
-            if (availability_1) {
-                products[i].availability = availability_1;
-            }
-        }
-        cache.products[category] = products;
-    }
     cache.availabilityUpdateTimes[manufacturer] = getSeconds();
 };
 var getSeconds = function () {
@@ -154,7 +145,7 @@ var getManufacturers = function (category) { return __awaiter(void 0, void 0, vo
             case 0: return [4 /*yield*/, updateProducts(category)];
             case 1:
                 productsResult = _a.sent();
-                console.log("Get products '" + category + "': " + productsResult);
+                console.log("--PRODUCT UPDATE STATUS '" + category + "': " + productsResult);
                 if (productsResult == UpdateStatus.Failed) {
                     return [2 /*return*/, null];
                 }
@@ -187,21 +178,24 @@ var getProducts = function (category, manufacturer, page, pageItemCount, filter)
                     return [4 /*yield*/, updateProducts(category)];
                 case 1:
                     productsResult = _a.sent();
-                    console.log("Get products '" + category + "': " + productsResult);
+                    console.log("--PRODUCT UPDATE STATUS '" + category + "': " + productsResult);
                     if (productsResult == UpdateStatus.Failed) {
                         return [2 /*return*/, null];
                     }
                     return [4 /*yield*/, updateAvailability(manufacturer)];
                 case 2:
                     availabilityResult = _a.sent();
-                    console.log("Get availability '" + manufacturer + "': " + availabilityResult);
+                    console.log("--AVAILABILITY UPDATE STATUS '" + manufacturer + "': " + availabilityResult);
                     // leave out await for instant return
                     if (availabilityResult == UpdateStatus.Failed) {
                         console.log('Failed to update availability');
                     }
                     return [2 /*return*/, cache.products[category].filter(function (p) {
                             return manufacturer == p.manufacturer && p.name.toLocaleLowerCase().includes(filter.toLowerCase());
-                        }).slice(page, page + pageItemCount)];
+                        }).slice(page, page + pageItemCount).map(function (p) {
+                            p.availability = cache.availability[p.id];
+                            return p;
+                        })];
             }
         });
     });
