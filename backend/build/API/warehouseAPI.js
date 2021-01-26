@@ -230,9 +230,11 @@ var getProducts = function (category, manufacturer, page, pageItemCount, filter)
     if (pageItemCount === void 0) { pageItemCount = 20; }
     if (filter === void 0) { filter = ""; }
     return __awaiter(void 0, void 0, void 0, function () {
+        var offset;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    offset = page * pageItemCount;
                     console.log("Getting products: cat=" + category + " man=" + manufacturer + " page=" + page + " filter=" + filter);
                     if (!!cacheAll) return [3 /*break*/, 3];
                     return [4 /*yield*/, updateProducts(category)];
@@ -246,7 +248,7 @@ var getProducts = function (category, manufacturer, page, pageItemCount, filter)
                 // leave out await for instant return
                 return [2 /*return*/, cache.products[category].filter(function (p) {
                         return manufacturer == p.manufacturer && p.name.toLocaleLowerCase().includes(filter.toLowerCase());
-                    }).slice(page, page + pageItemCount).map(function (p) {
+                    }).slice(offset, offset + pageItemCount).map(function (p) {
                         var _a;
                         p.availability = (_a = cache.availability) === null || _a === void 0 ? void 0 : _a[p.id];
                         return p;
