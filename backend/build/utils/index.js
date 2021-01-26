@@ -39,49 +39,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var express_1 = require("express");
-var warehouseAPI_1 = __importDefault(require("../API/warehouseAPI"));
-var router = express_1.Router();
-router.get('/categories', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        console.log("--------------------------------");
-        console.log("\nSTART GET categories");
-        res.json(warehouseAPI_1.default.getCategories());
-        console.log("--------------------------------");
-        return [2 /*return*/];
+exports.delay = exports.getSeconds = exports.getJsonResponse = void 0;
+var axios_1 = __importDefault(require("axios"));
+var timeout = 30000;
+var getJsonResponse = function (path, errorMode) {
+    if (errorMode === void 0) { errorMode = ""; }
+    return __awaiter(void 0, void 0, void 0, function () {
+        var response, e_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    console.log("API JSON request to: ", path);
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, axios_1.default.get(path, {
+                            timeout: timeout,
+                            headers: {
+                                'x-force-error-mode': errorMode
+                            }
+                        })];
+                case 2:
+                    response = _a.sent();
+                    return [2 /*return*/, response.data];
+                case 3:
+                    e_1 = _a.sent();
+                    console.log("Error fetching JSON from API: ", e_1.message);
+                    throw e_1;
+                case 4: return [2 /*return*/];
+            }
+        });
     });
-}); });
-router.get('/manufacturers', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var manufacturers;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                console.log("--------------------------------");
-                console.log("\nSTART GET manufacturers");
-                return [4 /*yield*/, warehouseAPI_1.default.getManufacturers(req.query.category)];
-            case 1:
-                manufacturers = _a.sent();
-                manufacturers ? res.json(manufacturers) : res.status(500).json([]);
-                console.log("--------------------------------");
-                return [2 /*return*/];
-        }
-    });
-}); });
-router.get('/', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var products;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                console.log("--------------------------------");
-                console.log("\nSTART GET products: ", req.query);
-                return [4 /*yield*/, warehouseAPI_1.default.getProducts(req.query.category, req.query.manufacturer, Number(req.query.page) - 1, Number(req.query.pageItemCount), req.query.filter)];
-            case 1:
-                products = _a.sent();
-                console.log("Products received: ", products === null || products === void 0 ? void 0 : products.length);
-                products ? res.json(products) : res.status(500).json([]);
-                console.log("--------------------------------");
-                return [2 /*return*/];
-        }
-    });
-}); });
-exports.default = router;
+};
+exports.getJsonResponse = getJsonResponse;
+var getSeconds = function () {
+    return new Date().getTime() / 1000;
+};
+exports.getSeconds = getSeconds;
+var delay = function (ms) {
+    return new Promise(function (resolve) { return setTimeout(resolve, ms); });
+};
+exports.delay = delay;
