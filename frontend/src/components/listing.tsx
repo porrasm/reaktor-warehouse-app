@@ -5,45 +5,50 @@ import { IProduct } from '../../../general_types'
 import { ProductInfo, ProductList } from './product'
 import SideBar from './sidebar'
 
-export interface IViewState {
-  categories: string[] | null
+interface IViewState {
   loadingMessage: string
+  selectedProduct: IProduct | null
+}
+
+interface IProductState {
+  categories: string[] | null
+  manufacturers: string[]
+}
+
+interface IProductSelection {
   category: string
   manufacturer: string
-  manufacturers: string[]
-  products: IProduct[]
-  selectedProduct: IProduct | null
   page: number
   filter: string
 }
 
-interface IProductUpdateParams {
+interface IProductSelectionArgs {
   category?: string
   manufacturer?: string
   page?: number
   filter?: string
 }
 
-const defaultState = (): IViewState => {
-  return {
-    categories: null,
-    loadingMessage: "",
-    category: "",
-    manufacturer: "",
-    manufacturers: [],
-    products: [],
-    selectedProduct: null,
-    page: 1,
-    filter: ""
-  }
-}
-
 const Listing: React.FC = () => {
 
-  const [state, setState] = React.useState<IViewState>(defaultState())
+  const [view, setView] = React.useState<IViewState>({
+    loadingMessage: "",
+    selectedProduct: null
+  })
+  const [productData, setProductData] = React.useState<IProductState>({
+    categories: null,
+    manufacturers: [],
+  })
+  const [selection, setSelection] = React.useState<IProductSelection>({
+    category: "",
+    manufacturer: "",
+    page: 1,
+    filter: ""
+  })
+  const [products, setProducts] = React.useState<IProduct[]>([])
 
   useEffect(() => {
-    if (!state.categories) {
+    if (!productData.categories) {
       loadCategories()
     }
   })
@@ -51,12 +56,12 @@ const Listing: React.FC = () => {
   //#region utilities
   const loadCategories = async () => {
     const categories = await productApi.getCategories()
-    setState({...state, categories})
+    setProductData({ ...productData, categories })
   }
 
   const selectPage = (page: number) => {
     console.log("Select page: ", page)
-    updateProducts({ page, filter: state.filter })
+    updateProducts({ page, filter: selection.filter })
   }
 
   const updateFilter = (filter: string) => {
@@ -64,7 +69,7 @@ const Listing: React.FC = () => {
   }
 
   const getCurrentPageCount = () => {
-    return 100000
+    return 10000
   }
 
   const selectManufacturer = async (manufacturer: string) => {
@@ -73,11 +78,12 @@ const Listing: React.FC = () => {
   }
 
   const selectCategory = async (category: string) => {
-    setState({...state, category, loadingMessage: "Loading manufacturers..." })
+    setSelection({ ...selection, category })
+    setView({ ...view, loadingMessage: "Loading manufacturers..." })
     console.log("Enabled category: ", category)
 
     const manufacturers = await productApi.getManufacturers(category)
-    setState({...state, manufacturers })
+    setProductData({ ...productData, manufacturers })
     console.log("Set manufacturers: ", manufacturers)
 
     if (manufacturers.length == 0) {
@@ -88,16 +94,19 @@ const Listing: React.FC = () => {
     updateProducts({ category, manufacturer: manufacturers[0] })
   }
 
-  const updateProducts = async ({ category = state.category, manufacturer = state.manufacturer, page = 1, filter = "" }: IProductUpdateParams) => {
+  const updateProducts = async ({ category = selection.category, manufacturer = selection.manufacturer, page = 1, filter = "" }: IProductSelectionArgs) => {
     console.log("Update products with page: ", page)
-    setState({...state, loadingMessage: "Loading products...", products: [] })
+    setView({ ...view, loadingMessage: "Loading products..." })
+    setProducts([])
     const products = await productApi.getProducts(category, manufacturer, page, filter)
-    setState({...state, products, loadingMessage: "", category, manufacturer, page, filter })
+    setProducts(products)
+    setSelection({ ...selection, category, manufacturer, page, filter })
+    setView({ ...view, loadingMessage: "" })
   }
 
   const selectProduct = async (selectedProduct: IProduct) => {
     console.log("Selected product: ", selectedProduct)
-    setState({...state,  selectedProduct })
+    setView({ ...view, selectedProduct })
   }
   //#endregion
 
@@ -107,26 +116,26 @@ const Listing: React.FC = () => {
         <Grid centered columns={3}>
           <Grid.Column>
             <Segment>
-              <ProductList products={state.products} clickHandler={selectProduct} />
+              <ProductList products={products} clickHandler={selectProduct} />
 
               <Rail position="left">
                 <SideBar
-                  currentCategory={state.category}
-                  categories={state.categories ? state.categories : []}
+                  currentCategory={selection.category}
+                  categories={productData.categories ? productData.categories : []}
                   selectCategory={selectCategory}
-                  currentManufacturer={state.manufacturer}
-                  manufacturers={state.manufacturers}
+                  currentManufacturer={selection.manufacturer}
+                  manufacturers={productData.manufacturers}
                   selectManufacturer={selectManufacturer}
                   updateFilter={updateFilter}
-                  page={state.page}
+                  page={selection.page}
                   pageCount={getCurrentPageCount()}
                   selectPage={selectPage}
-                  loadingMessage={state.loadingMessage}
+                  loadingMessage={view.loadingMessage}
                 />
               </Rail>
 
               <Rail position="right">
-                {state.selectedProduct ? <ProductInfo product={state.selectedProduct} />
+                {view.selectedProduct ? <ProductInfo product={view.selectedProduct} />
                   : <Message><Message.Content>Select a product for more information</Message.Content></Message>}
               </Rail>
 

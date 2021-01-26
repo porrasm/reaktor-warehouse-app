@@ -37,24 +37,27 @@ const SideBar: React.FC<SideBarProps> = (props: SideBarProps) => {
       onChange={props.selectManufacturer}
       options={props.manufacturers} />
       &nbsp;
+      {props.currentCategory == "" || props.currentManufacturer == "" ? "" : <div>
       <Input icon='search'
-      style={{ width: "272px" }}
-      onChange={(e, data) => setFilter(data.value as string)}>
-      <input />
-      <Button type='submit' onClick={() => props.updateFilter(filter)}>Search</Button>
-    </Input>
+        style={{ width: "272px" }}
+        onChange={(e, data) => setFilter(data.value as string)}>
+        <input />
+        <Button type='submit' onClick={() => props.updateFilter(filter)}>Search</Button>
+      </Input>
       &nbsp;
       {props.pageCount > 0 ? <Pagination
-      style={{ width: "272px" }}
-      boundaryRange={0}
-      ellipsisItem={null}
-      firstItem={null}
-      lastItem={null}
-      siblingRange={1}
-      totalPages={props.pageCount}
-      activePage={props.page}
-      onPageChange={(e, data) => props.selectPage(Number(data.activePage))}
-    /> : ""}
+        style={{ width: "272px" }}
+        boundaryRange={0}
+        ellipsisItem={null}
+        firstItem={null}
+        lastItem={null}
+        siblingRange={1}
+        totalPages={props.pageCount}
+        activePage={props.page}
+        onPageChange={(e, data) => props.selectPage(Number(data.activePage))}
+      /> : ""}
+    </div>}
+
     &nbsp;
       {props.loadingMessage.length == 0 ? "" : <Message icon>
       <Icon name='circle notched' loading />

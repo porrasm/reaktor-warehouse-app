@@ -166,6 +166,8 @@ const getManufacturers = async (category: string): Promise<string[] | null> => {
 
 const getProducts = async (category: string, manufacturer: string, page = 0, pageItemCount = 20, filter = ""): Promise<IProduct[] | null> => {
 
+    const offset = page*pageItemCount
+
     console.log(`Getting products: cat=${category} man=${manufacturer} page=${page} filter=${filter}`)
 
     if (!cacheAll) {
@@ -177,7 +179,7 @@ const getProducts = async (category: string, manufacturer: string, page = 0, pag
 
     return cache.products[category].filter(p => {
         return manufacturer == p.manufacturer && p.name.toLocaleLowerCase().includes(filter.toLowerCase())
-    }).slice(page, page + pageItemCount).map(p => {
+    }).slice(offset, offset + pageItemCount).map(p => {
         p.availability = cache.availability?.[p.id]
         return p
     })

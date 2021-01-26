@@ -6,6 +6,7 @@ const baseURL = '/api/'
 // Used to cancel API call retries if another API call is requested
 let apiRetryID = 0
 
+const pageItemCount = 100
 
 const getCategories = async (): Promise<string[]> => {
   const categories = await getAPIResponse<string[]>(apiPath(["products", "categories"]))
@@ -21,7 +22,7 @@ const getProducts = async (category: string, manufacturer: string, page: number,
     page,
     filter,
     manufacturer,
-    pageItemCount: 100
+    pageItemCount
   }
   const products = await getAPIResponse<IProduct[]>(apiPath(["products"]), 6, params)
   return products ? products : []
@@ -53,5 +54,6 @@ const apiPath = (path: string[]) => {
 export default {
   getCategories,
   getManufacturers,
-  getProducts
+  getProducts,
+  pageItemCount
 }
