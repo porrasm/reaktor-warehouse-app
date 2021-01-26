@@ -4,6 +4,7 @@ import productApi from '../services/productApi'
 import { IProduct } from '../../../general_types'
 import { ProductInfo, ProductList } from './product'
 import SideBar from './sidebar'
+import { stat } from 'fs';
 
 interface IViewState {
   loadingMessage: string
@@ -91,7 +92,7 @@ const Listing: React.FC = () => {
       return
     }
 
-    updateProducts({ category, manufacturer: manufacturers[0] })
+    updateProducts({ category, manufacturer: selection.manufacturer == "" ? manufacturers[0] : selection.manufacturer })
   }
 
   const updateProducts = async ({ category = selection.category, manufacturer = selection.manufacturer, page = 1, filter = "" }: IProductSelectionArgs) => {
