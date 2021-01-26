@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { IProduct, IAvailability } from '../../../general_types'
+import { IProduct } from '../../../general_types'
 
 const baseURL = '/api/'
 
@@ -42,13 +42,9 @@ const getAPIResponse = async <T>(path: string, retries = 6, params: any = {}): P
     } catch (e) {
       console.log("Error fetching JSON from API: ", e.message, e)
     }
-
-    //await delay(timeout)
   }
   return null
 }
-
-
 
 const apiPath = (path: string[]) => {
   return baseURL + path.join("/")
