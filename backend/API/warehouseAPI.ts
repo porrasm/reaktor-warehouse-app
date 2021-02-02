@@ -22,7 +22,7 @@ type IRawAvailability = {
     Huge speedup and a viable solution when the amount of data is relatively small like now. */
 const cacheAll = process.env.CACHE_ALL === "true"
 
-const cacheUpdateMinutes = 10
+const cacheUpdateMinutes = 5
 const cachedObjectLifetime = 300
 
 const baseURL = "https://bad-api-assignment.reaktor.com/v2"

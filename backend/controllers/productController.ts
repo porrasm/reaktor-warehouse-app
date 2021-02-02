@@ -2,9 +2,6 @@ import { Router } from 'express'
 import warehouseAPI from '../API/warehouseAPI'
 const router = Router()
 
-
-
-
 router.get('/categories', async (req, res) => {
     console.log("--------------------------------")
     console.log("\nSTART GET categories")

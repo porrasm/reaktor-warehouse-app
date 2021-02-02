@@ -4,5 +4,6 @@ This is the preassignment for Reaktor. The application can be accessed on [Herok
 
 ## Notes
 
-- Pagination was not necessary but it speeded up the page loading times by a huge margin. Filtering became a necessity with pagination.
-- Currently the application stores the data received from the API in memory for reuse to allow instant page changing. This would become a problem with more products or categories. The solution is storing them in memory altogether or to assign a limit of how much memory can be used.
+- Pagination was not necessary but it speeded up the page rendering by a bit. Filtering became a necessity with pagination.
+- To allow for ultra fast speeds the backend caches the slow API content every 5 minutes ensuring it is always available fast and up to date
+- If I had more time the next few things I would implement would be a better deployment pipeline, split the main Listing component into separate ones and adopt some library for caching instead of using my own method
