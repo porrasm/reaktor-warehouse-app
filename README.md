@@ -2,6 +2,8 @@
 
 This is the preassignment for Reaktor. The application can be accessed on [Heroku](https://warehouse-stock-app.herokuapp.com/).
 
+The instructions for this assignment are available [here](https://www.reaktor.com/junior-dev-assignment/).
+
 ## Notes
 
 - Pagination was not necessary but it speeded up the page rendering by a bit. Filtering became a necessity with pagination.
